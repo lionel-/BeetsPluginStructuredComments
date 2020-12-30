@@ -74,7 +74,12 @@ class StructuredCommentsCommand(BeetsPlugin):
         tmpl = self.config['template'].get()
         template = util.functemplate.Template(tmpl)
         new_sc = template.substitute(item, item._template_funcs())
-        return u'{} {} {}'.format(new_sc, delimiter, comments)
+        new_sc = new_sc.rstrip()
+
+        if (not len(new_sc)):
+            return comments
+        else:
+            return u'{} {} {}'.format(new_sc, delimiter, comments)
         
     def imported(self, session, task):
         for item in task.imported_items():
