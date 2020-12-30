@@ -22,6 +22,7 @@ class StructuredCommentsCommand(BeetsPlugin):
         self.config.add({
             u'auto': False,
             u'delimiter': ':::',
+            u'fields': []
         })
 
         if self.config['auto']:
@@ -64,6 +65,10 @@ class StructuredCommentsCommand(BeetsPlugin):
                     self.write_structured_comment(item, new_comments, write)
 
     def build_structured_comment(self, item):
+        fields = self.config['fields']
+        if fields:
+            self.template_fields['tags'] = tmpl_fields(fields.get())
+
         delimiter = self.config['delimiter'].get(str)
         sc, comments = split_on_delimiter(item.comments, delimiter) 
         tmpl = self.config['template'].get()
@@ -83,3 +88,26 @@ class StructuredCommentsCommand(BeetsPlugin):
         if write:
             item.try_write()
         item.store()
+
+def tmpl_fields(fields):
+    fields = fields.split()
+    def tmpl(item):
+        tags = [tag_template(item, field) for field in fields]
+        tags = list(filter(None, tags))
+        return ' '.join(tags)
+    return tmpl
+
+def tag_template(item, field):
+    field_int = arg_as_int(item.formatted().get(field))
+    if field_int:
+        return '[{}]'.format(field.upper())
+    else:
+        return ''
+
+def arg_as_int(arg):
+    try:
+        return int(arg.strip())
+    except ValueError:
+        return int(arg.lower() == "true")
+    else:
+        return 0
